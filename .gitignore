@@ -1,3 +1,6 @@
+# Ignore all files without extensions
+*
+!*.*
+!*/
 #ignore .out files
 *.out
-m
