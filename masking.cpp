@@ -6,7 +6,7 @@
 template <class T>
 std::string getBinary(T num)
 {
-	std::string binary = std::bitset<32> (num).to_string();
+	std::string binary = std::bitset<64> (num).to_string();
 	//std::bitset<64> binaryEquivalent num;
 	return binary;
 }
@@ -33,6 +33,30 @@ void printBitManipulation(T num1, T num2)
 	std::cout << "~(a ^ b)             : " << getBinary(~(num1 ^ num2)) << ":   " << ~(num1 ^ num2)  << std::endl;
 	std::cout << "---------------------------------------" << std::endl;
 }
+
+// Offset, length.
+// Creating a bit mask for a specific offset and length.
+template <class T>
+T bitMask(int offset, int length)
+{
+	//All ones.
+	unsigned long long mask = ~(0);
+	//
+	mask = ~((mask) >> length) >> offset;
+	return mask;
+}
+
+template <class T>
+T bytesInQuestion()
+
+// Function that isolates the fragment wanted.
+template <class T>
+T cleanFragment(T stream)
+{
+	return stream;
+}
+
+
 
 
 
@@ -69,8 +93,8 @@ int main()
 	printBitManipulation(test, mask3);
 
 	// Creating a bitmask of 4 bits long.
-	unsigned int allOnes = ~(0);
-	allOnes = ~((allOnes) << 4);
+	unsigned long long allOnes = ~(0);
+	allOnes = ~((allOnes) >> 4) >> 10 ;
 	std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl; 
 	
 
