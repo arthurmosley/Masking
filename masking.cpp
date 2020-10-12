@@ -2,6 +2,7 @@
 #include <bitset>
 #include <string>
 #include <stdlib.h>
+#include <bits/c++config.h>
 
 template <class T>
 std::string getBinary(T num)
@@ -34,7 +35,6 @@ void printBitManipulation(T num1, T num2)
 	std::cout << "---------------------------------------" << std::endl;
 }
 
-// Offset, length.
 // Creating a bit mask for a specific offset and length.
 template <class T>
 T bitMask(int offset, int length)
@@ -46,18 +46,29 @@ T bitMask(int offset, int length)
 	return mask;
 }
 
+
+// Convert input to binary --> 00 001111 000011 11 00001111
+// 				Want bits OFFSET = 2 LENGTH = 11
+//        OFFSET (2) % 8 = 2 (go back 2 bits) ... LENGTH (11) % 8 = 3 + 2
 template <class T>
-T bytesInQuestion()
+T bytesInQuestion(T fragment, int offset, int length)
+{
+	unsigned long long mask = ~(0);
+	mask = ~((mask) << length) << offset;
+	//std::cout << "TEST1: " << getBinary(fragment) << std::endl;
+	//std::cout << "TEST2: " << getBinary(mask) << std::endl;
+	T bytesInQ = fragment &  mask;
+
+	return bytesInQ;
+}
 
 // Function that isolates the fragment wanted.
 template <class T>
-T cleanFragment(T stream)
+T cleanFragment(T stream, int offset, int length)
 {
+
 	return stream;
 }
-
-
-
 
 
 // running tally of the bit position.
@@ -95,9 +106,12 @@ int main()
 	// Creating a bitmask of 4 bits long.
 	unsigned long long allOnes = ~(0);
 	allOnes = ~((allOnes) >> 4) >> 10 ;
-	std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl; 
-	
+	std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;
 
+	unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
+	std::cout << "raw number bytes in question: " << un << std::endl;
+	std::string uncleanFragment = getBinary(un);
+	std::cout << "uncleaned bytes in question: " << uncleanFragment << std::endl;
 	// Basic output.
   //printBinary(12, 10);
   //printBitManipulation(12, 10);
