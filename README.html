@@ -1,0 +1,281 @@
+<html>
+<body>
+<pre>
+Keep it simple!
+
+do it in Python3
+
+Feel free to use any 3rd part library to help you.
+I'm supplying you a simple Tree class in python.
+
+Job is,
+
+inspect a JPEG file, decompose the file into a tree (i.e. a directed graph
+with a single root node) that describes each significant chunk of the file in
+terms of a tuple.
+
+(start, length, type)
+
+Now we need to digress into what 'type' means.
+
+type should be one of 'BASIC', 'LSBStream', 'MSBStream'
+BASIC means that start and length are in BYTES, where 0 means the beginning of the file
+
+LSBStream means this fragment's start and length describe a contiguous
+sequence of bits in little endian order
+
+MSBStream says that fragment's start and length describe a contiguous sequence
+of bits in big endian order:
+
+if type is LSBStream, you MUST treat "bit 0" as the LEAST significant bit of the "word"
+if type is MSBStream, you MUST treat "bit 0" as the MOST significant bit of the "word"
+where "word" is a unit of 1,2,4, or 8 bytes
+THIS IS DIFFERENT FROM HOW Python (and C) refer to bit positioning!
+Python and C/C++ always treat "bit 0" of a "word" as the least significant
+bit.
+
+Why do I do this? This is so that regardless of whether an object is
+originally a big endian or little endian format, the offset and length will
+always refer to the EXACT same location in the object:
+
+Take a look at below. It is an 8 byte unit. Row X shows the byte positions,
+and Rows A and B list the bit positions (in base 16).
+Row C shows the positions of the most and least significant bits of each word.
+Remember -- bits are not machine accessible. Row C also shows the position
+of a bit marked "*". This marked bit shows in which word the bit is located.
+
+
+  Bit Ordering and Endianness --
+  "M" means most significant, "L" means least significant
+
+  LE chunksize=1byte
+  LSB to MSB
+X:0       :1       :2       :3       :4       :5       :6       :7       :
+A:00000000:00000000:11111111:11111111:22222222:22222222:33333333:33333333
+B:01234567:89abcdef:01234567:89abcdef:01234567:89abcdef:01234567:89abcdef:
+C:L      M:L      M:L  *   M:L      M:L      M:L      M:L      M:L      M:
+
+
+  In the above example, the word is 1 byte. Each byte is composed of 8 bits.
+  The row marked X shows the BYTE offset. Combine the digit in row A with the
+  digit in row B to get the bit position. In this example, bit bit position
+  marked with "*" is read 0x13 or 19 decimal.
+  This bit is located inside byte 2.
+
+  Now, lets move to word size of 2 bytes (i.e. C "short"). We're still keeping
+  bit 0 as the least significant bit of the word.
+
+  LE chunksize=2byte
+  LSB to MSB
+Y:0               :1                :2              :3               :4
+X:0      :1       :2       :3       :4      :5      :6      :7       :
+A:0000000000000000:1111111111111111:2222222222222222:3333333333333333
+B:0123456789abcdef:0123456789abcdef:0123456789abcdef:0123456789abcdef:
+C:L              M:L    *         M:L              M:L              M:
+
+  In the above example, wordsize is 2 bytes (a "C" short). Row Y describes the
+  offset in "shorts" and row X still descbribes the byte offset. Even here,
+  the "*" bit is bit 19 (0x13) (or 0d19 -- 0d is nonstandard marker for
+  "decimal" or base 10 notation). It is still located within byte 2, but its
+  located in word 1.
+
+  Now, lets assume that we are examining a file that comes from a big endian
+  machine, and we are still using bytes as the "word". In the example below,
+  we're still treating bit 0 as the least significant bit.
+
+  BE chunksize=1byte,Bit0=LSB
+  LSB to MSB
+X:0       :1       :2       :3       :4       :5       :6       :7       :
+A:00000000:00000000:11111111:11111111:22222222:22222222:33333333:33333333
+B:01234567:89abcdef:01234567:89abcdef:01234567:89abcdef:01234567:89abcdef:
+C:L      M:L      M:L  *   M:L      M:L      M:L      M:L      M:L      M:
+
+
+  As you can see, in this example, bit 19 (0x13) still describes the exact same
+  bit as in the prior two LSB cases.
+
+  So what happens if we move up to a larger word size?
+
+  BE chunksize=2byte,Bit0=LSB
+  LSB to MSB
+Y:0                :1                :2             :3               :4
+X:0       :1       :2       :3       :4      :5     :6      :7       :
+A:0000000000000000:1111111111111111:2222222222222222:3333333333333333
+B:89abcdef01234567:89abcdef01234567:89abcdef01234567:89abcdef01234567
+C:       ML       :       ML  *    :       ML       :       ML       :
+
+The above example shows how C (and all other programming languages) treat
+bits. Bit 0 is seen as the least significant bit. In other words, the most
+significant bit of each word is now located at a different physical BYTE.
+In other words, bit 19 (0x13) now refers to a bit in BYTE 3!
+Take a look at the bit positions of the bits marked "M". They are at different
+places than the LSB cases.
+
+So now, lets take a look at the same chunk from a big endian machine, except
+now we artificially change the meaning of bit 0 to mean Most significant.
+
+  BE chunksize=1byte,Bit0=MSB
+  MSB to LSB
+X:0       :1       :2       :3       :4       :5       :6       :7       :
+A:00000000:00000000:11111111:11111111:22222222:22222222:33333333:33333333
+B:01234567:89abcdef:01234567:89abcdef:01234567:89abcdef:01234567:89abcdef:
+C:M      L:M      L:M  *   L:M      L:M      L:M      L:M      L:M      L:
+
+In the above example, bit 19 (0x13) STILL refers to the exact same bit as in
+the LSB case. So now lets take a look at when we use a word size greater than
+1 byte.
+
+  BE chunksize=2byte,Bit0=MSB
+  MSB to LSB
+Y:0                :1                :2             :3               :4
+X:0       :1       :2       :3       :4      :5     :6      :7       :
+A:0000000000000000:1111111111111111:2222222222222222:3333333333333333
+B:0123456789abcdef:0123456789abcdef:0123456789abcdef:0123456789abcdef:
+C:M              L:M  *           L:M              L:M              L:
+
+  As long as the endianness is LE, the bit positions refer to the same
+  bit in the same byte. For BE, bit 0 HAS to be the MSB for the byte-bit
+  offset to be the same across chunk sizes. This way, the chunk size
+  need not be recorded.
+
+  This is the best way to specify bit fields that is architecturally neutral.
+  You won't need to worry about supporting 'MSBStream' case. Since the PC is
+  little endian, you will only need to worry about 'BASIC' (where the offset
+  and length are in bytes) or 'LSBStream' where the offset and length describe
+  the bit position where bit 0 is the least significant bit.
+
+  Remember that bits are not directly addressable, only bytes are.
+  So the notion of how to describe a bit field is purely for our
+  convenience. So a bit position is translated into (word offset, bit offset
+  in word). To be more efficient, if we adapt the bit numbering scheme
+  where for little endian machines, bit 0 is the LSB, and for big endian
+  machines, bit 0 is the MSB, the same bit position number can be used to
+  refer to the exact same BYTE and bit offset regardless of where that chunk
+  comes from.
+
+
+Take a look at the simple Tree.py and Unit.py
+It shows you how to use the very simple DebugHelper class to selectively print
+debugging statements, as well as how to use the FragmentInfo class.
+
+Coding style requirement here is use Python indent of TWO spaces, and use UNIX line endings.
+
+This is not a hw assignment. Therefore, use whatever other python3 packages
+you wish. Steal liberally. (Just keep track of where you get stuff from, for
+legal purposes)
+
+DGA.py contains an implementation of depth first search and Strongly connected
+components algorithms. You probably won't need it. It also shows more examples
+of how to use DebugHelper to selectively print debugging statements.
+
+Only requirement is that you output a tree of FragmentInfo's (decorated
+however you see fit) for every chunk of a JPEG file.
+
+READ THROUGH ALL THE FILES HERE CAREFULLY!
+You should try very hard to come up with a Tree form, such that PARENT nodes
+"cover" the child nodes.
+
+For example, if a struct 48 byte long struct in a file starts at byte 10
+then the tree for that region should start off with:
+
++ (10, 48, BASIC)
+|
++ 
+
+The BASIC marker means that the offsets in this fragment are in bytes.
+
+Lets assume the first 10 BITS for this struct is a 10 bit number, then the
+tree might be
+
++ (10, 48, BASIC)
+|
++-- (80, 10, LSBStream)
+
+i.e. bit 80 points to the LSB bit at the beginning of
+the struct. The LSBStream marker means that the offset and length are in
+BITS. Note that this new child node overlaps the parent, because bits 80
+through 90 overlap bytes 10 through 58
+
+Let's assume that the next 6 bits are not used
+Let's assume tht the third byte of this struct presents some kind of numeric
+code, which is 8 bits long
+
++ (10, 48, BASIC)
+|
++-- (80, 10, LSBStream)
++-- (96, 8, LSBStream)
+
+Let's assume that the bytes 4 through 10 in the struct is a substructure,
+then the tree will look like the following.
+
++ (10, 48, BASIC)
+|
++-- (80, 10, LSBStream)
++-- (96, 8, LSBStream)
++-- (14, 6, BASIC)
+
+Lets assme that this new struct is split into 3 2-byte fields
++ (10, 48, BASIC)
+|
++-- (80, 10, LSBStream)
++-- (96, 8, LSBStream)
++-+ (14, 6, BASIC)
+  +--- (14, 2, BASIC)
+  +--- (16, 2, BASIC)
+  +--- (18, 2, BASIC)
+
+
+You will need to write an API that uses a FragmentInfo to query a file (or an
+in-memory representation of a file) that returns the actual byte sequence that
+FragmentInfo refers to. Just remember that since bits are not directly
+addressable, you'll need to convert bit offsets to byte offset + LSB offset in
+the byte in order for you to get at the actual bits in question.
+
+The FragmentInfo currently just holds the offset, length, and type.
+The api should set the 'payload' field of FragmentInfo with the adjusted raw
+byte sequence from the file that correspond to the location specified by the
+fragment. If the offset and or length is not divisible by 8, you should adjust
+the bytes so that the first byte and first bit of the payload correspond to
+the first bit of the region.
+
+In other words
+
+  LE chunksize=2byte
+  LSB to MSB
+Y:0               :1                :2              :3               :4
+X:0      :1       :2       :3       :4      :5      :6      :7       :
+A:0000000000000000:1111111111111111:2222222222222222:3333333333333333
+B:0123456789abcdef:0123456789abcdef:0123456789abcdef:0123456789abcdef:
+C:L              M:L              M:L              M:L              M:
+V:0000011111100000:0101000111011011:1111000011110000:1100110011001100:
+P:                :   ***********  :
+
+Let's assume that a FragmentInfo specifies (19, 11, LSBStream). The bits in
+question are marked with '*" in row P.
+
+If you were to grab the this Fragment naively, the bits that you grab
+would cover the 2 byte region (2,2, Basic), with the bits 01010001:11011011
+resulting in the byte value (138 (0x8a) (+ 2 8 128)), and (219 0xdb (+ 1 2 8 16 64 128))
+Note that bit on the RIGHT are more significant.
+the first byte 01010001  decodes to 2 + 8 + 128 for the 1 bits from left to
+right and the second byte 11011011 decodes to 1 + 2 + 8 + 16 + 64 + 128
+Unfortunately, this 2 byte sequence has bits that we are not interested in.
+So the solution is to adjust the payload to throw away bits that we do not want.
+
+So the bits that we want are:
+01010001:11011011
+   10001:110110
+
+When the sequence ???10001:110110??? is shifted to the left by 3, the resulting
+value in the payload is:
+10001110:110*****  where the '*' are simply set to 0
+
+In this case the two byte sequence that covers the 11 bit field is
+(113 0x71 (+ 1 16 32 64)) and (3, 0x3 (+ 1 2)).
+
+
+
+</pre>
+</body>
+</html>
+
