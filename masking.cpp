@@ -51,15 +51,31 @@ T bitMask(int offset, int length)
 // 				Want bits OFFSET = 2 LENGTH = 11
 //        OFFSET (2) % 8 = 2 (go back 2 bits) ... LENGTH (11) % 8 = 3 + 2
 template <class T>
-T bytesInQuestion(T fragment, int offset, int length)
+void bytesInQuestion(const T* src, T* dest, unsigned int offset, unsigned int length)
 {
 	unsigned long long mask = ~(0);
 	mask = ~((mask) << length) << offset;
 	//std::cout << "TEST1: " << getBinary(fragment) << std::endl;
 	//std::cout << "TEST2: " << getBinary(mask) << std::endl;
-	T bytesInQ = fragment &  mask;
+	//T bytesInQ = src &  mask;
 
-	return bytesInQ;
+	//First part of the fragment (1st byte)
+	int whichByte = int(offset / 8);
+	// startPos information valuable for cleaning the first byte in the buffer.
+	int startPos = offset % 8;
+	/*** SOURCED FROM geeksforgeeks.org ***/
+	const T sourceValue = *src;
+	// QUESTION 1: is this okay to do?
+	T firstFrag = (((1 << length) - 1) & (sourceValue >> (offset - 1)));
+	std::string t1 = getBinary(firstFrag);
+	std::cout << "testing " << "int val:" << firstFrag << " " << t1 << std::endl;
+	// adding the first byte of the input given offset and length...
+	// QUESTION 2: Should I create a dynamic array where I append each bit in order to save the entire fragment desired?
+	// How do I "append" values to the destination?
+	*dest = firstFrag;
+
+
+
 }
 
 // Function that isolates the fragment wanted.
@@ -108,13 +124,18 @@ int main()
 	allOnes = ~((allOnes) >> 4) >> 10 ;
 	std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;
 
-	unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
-	std::cout << "raw number bytes in question: " << un << std::endl;
-	std::string uncleanFragment = getBinary(un);
-	std::cout << "uncleaned bytes in question: " << uncleanFragment << std::endl;
+	//unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
+	//std::cout << "raw number bytes in question: " << un << std::endl;
+	//std::string uncleanFragment = getBinary(un);
+	//std::cout << "uncleaned bytes in question: " << uncleanFragment << std::endl;
 	// Basic output.
   //printBinary(12, 10);
   //printBitManipulation(12, 10);
+	int dest;
+	int* destination = &dest;
+	const int source = 171;
+	const int* src = &source;
+	bytesInQuestion(src, destination, 2, 5);
 
 
 
