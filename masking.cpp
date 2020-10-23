@@ -4,12 +4,39 @@
 #include <stdlib.h>
 #include <bits/c++config.h>
 
-template <class T>
+/*template <class T>
 std::string getBinary(T num)
 {
 	std::string binary = std::bitset<64> (num).to_string();
 	//std::bitset<64> binaryEquivalent num;
 	return binary;
+}*/
+/*** INSPIRATION FROM https://stackoverflow.com/questions/22746429/c-decimal-to-binary-converting ***/
+template <class T>
+std::string getBinary(T n)
+{
+    std::string r;
+    while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
+    return r;
+}
+
+int getNumeric(std::string binary)
+{
+  int convert = std::stoi(binary, nullptr, 2);
+  return convert;
+}
+
+std::string fillBinary(std::string bin, int size)
+{
+	if(bin.length() >= size) return bin;
+	int numFill = size-bin.length();
+	std::string filledBinary = "";
+	while(bin.length() < numFill)
+	{
+		filledBinary += "0";
+	}
+	filledBinary += bin;
+	return filledBinary;
 }
 
 template <class T>
@@ -72,6 +99,25 @@ void bytesInQuestion(const T* src, T* dest, unsigned int offset, unsigned int le
 	// adding the first byte of the input given offset and length...
 	// QUESTION 2: Should I create a dynamic array where I append each bit in order to save the entire fragment desired?
 	// How do I "append" values to the destination?
+	std::string entireFragment = "";
+	std::string tempChunk = getBinary(firstFrag);
+	//adding the current chunk to the fragment to then be held by dest.
+	entireFragment += tempChunk;
+  std::cout << "entire fragment binary " << entireFragment << std::endl;
+  std::cout << "entire fragment integer " << currentFrag << std::endl;
+  int counter = 8 - startPos;
+  // How do you find out where the last bit is.
+  //  go until the length + offset - how many bits are in the last chunk.
+  int endByte = int((offset + length) / 8);
+  int endPos = (length) % 8;
+  //Goes until hitting the last bit.
+  int goUntil = length - endPos;
+  T middleFrag = (((1 << goUntil) - 1) & (sourceValue >> (offset + counter - 1)));
+  tempChunk = getBinary(middleFrag);
+  entireFragment += tempChunk;
+  
+
+
 	*dest = firstFrag;
 
 
@@ -120,9 +166,9 @@ int main()
 	printBitManipulation(test, mask3);
 
 	// Creating a bitmask of 4 bits long.
-	unsigned long long allOnes = ~(0);
-	allOnes = ~((allOnes) >> 4) >> 10 ;
-	std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;
+	//unsigned long long allOnes = ~(0);
+	//allOnes = ~((allOnes) >> 4) >> 10 ;
+	//std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;
 
 	//unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
 	//std::cout << "raw number bytes in question: " << un << std::endl;
@@ -136,6 +182,7 @@ int main()
 	const int source = 171;
 	const int* src = &source;
 	bytesInQuestion(src, destination, 2, 5);
+	std::cout << "DESTINATION VALUE" << *destination << std::endl;
 
 
 
