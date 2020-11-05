@@ -4,21 +4,28 @@
 #include <stdlib.h>
 #include <bits/c++config.h>
 
-/*template <class T>
+template <class T>
 std::string getBinary(T num)
 {
-	std::string binary = std::bitset<64> (num).to_string();
-	//std::bitset<64> binaryEquivalent num;
-	return binary;
-}*/
+	const int nBits = sizeof(T)*8;
+	unsigned char s[nBits + 1];
+	for (unsigned int i = 0; i < nBits; ++i)
+	{
+		s[i] = '0' + ((num >> i) & 1);
+	}
+	s[nBits] = 0;
+	//std::string binary = std::bitset<64> (num).to_string();
+	
+	return std::string((const char*) s);
+}
 /*** INSPIRATION FROM https://stackoverflow.com/questions/22746429/c-decimal-to-binary-converting ***/
-template <class T>
+/*template <class T>
 std::string getBinary(T n)
 {
     std::string r;
     while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
     return r;
-}
+}*/
 
 int getNumeric(std::string binary)
 {
@@ -92,7 +99,10 @@ void bytesInQuestion(const T* src, T* dest, unsigned int offset, unsigned int le
 	int startPos = offset % 8;
 	/*** SOURCED FROM geeksforgeeks.org ***/
 	const T sourceValue = *src;
-	// QUESTION 1: is this okay to do?
+	std::cout << "BINARY for SRC: " << getBinary(sourceValue) << std::endl;
+	// QUESTION 1: is this okay to do? -- need to check if length is less than number of bits in T.
+	// Need to modulo and divide by the number of bits in T.
+	// Reevaluate how I did this.
 	T firstFrag = (((1 << length) - 1) & (sourceValue >> (offset - 1)));
 	std::string t1 = getBinary(firstFrag);
 	std::cout << "testing " << "int val:" << firstFrag << " " << t1 << std::endl;
@@ -104,7 +114,7 @@ void bytesInQuestion(const T* src, T* dest, unsigned int offset, unsigned int le
 	//adding the current chunk to the fragment to then be held by dest.
 	entireFragment += tempChunk;
   std::cout << "entire fragment binary " << entireFragment << std::endl;
-  std::cout << "entire fragment integer " << currentFrag << std::endl;
+  //std::cout << "entire fragment integer " << currentFrag << std::endl;
   int counter = 8 - startPos;
   // How do you find out where the last bit is.
   //  go until the length + offset - how many bits are in the last chunk.
@@ -180,6 +190,7 @@ int main()
 	int dest;
 	int* destination = &dest;
 	const int source = 171;
+
 	const int* src = &source;
 	bytesInQuestion(src, destination, 2, 5);
 	std::cout << "DESTINATION VALUE" << *destination << std::endl;
