@@ -1,0 +1,62 @@
+0    4    8    12   16   20   24   28   32   36   40   44   48
+0000 1101 0110 1101 1011 1000 1101 1110 0111 0011 1010 0111 1100
+0000110101101101101110001101111001110011101001111100
+Word size is 16 bits (2 bytes).
+
+Bit offset: 0
+
+template <class T>
+void extractBits(T* dst, const T* src, unsigned offset, unsigned length, )
+{
+
+}
+
+EXAMPLE: extractBits(, , 0, 6);
+0000 11
+
+extractBits(, , 2, 4);
+00 11
+
+extractBits(, , 17, 46)
+16  				32					48
+1011 1000 1101 1110 0111 0011 1010 0110
+ *** **** **** **** **** **** **** ***
+                  					  x
+ 1st word
+ 011 1000 1101 1110
+0111 0001 1011 1100 --> right shifted by startingBitPos
+				  * grab this bit from LSB of next chunk.
+
+ 17%16 = 1
+ 17/16 = 1
+ 46%16 = 14
+ 46/16 = 2
+ (46+17)%16 = 15
+ (46+17)/16 = 3
+const unsigned wordSizeBits = sizeof(T)*8;
+unsigned int startChunk = offset/wordSizeBits;
+startingBitPos = offset%wordSizeBits;
+endBitPos = (offset+ length) %wordSizeBits;
+endChunk = (offset+length)/wordSizeBits;
+0111 0001 1011 11
+
+Grab, from start chunk to end chunk, copy to DST.
+@ startChunk, clear out LS starting bit position.
+@ endchunk, clear out (wordsizeBits - endbitpos) most significant bits
+
+If endbitpos is 0, clearing out exactly 0 bits.
+
+starting from start chunk, right shift by startingBitPos.
+Grab LS starting bit position from startchunk + 1
+
+3 Corner Cases:
+1. When startChunk == endChunk
+	Figure out how many bits to right shift.
+2. When startChunk == endChunk + 1
+
+3. When startChunk > endChunk + 1
+
+// Creating a bitmask of 4 bits long.
+unsigned long long allOnes = ~(0);
+allOnes = ~((allOnes) >> 4) >> 10 ;
+std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;

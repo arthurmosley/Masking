@@ -14,18 +14,8 @@ std::string getBinary(T num)
 		s[i] = '0' + ((num >> i) & 1);
 	}
 	s[nBits] = 0;
-	//std::string binary = std::bitset<64> (num).to_string();
-	
 	return std::string((const char*) s);
 }
-/*** INSPIRATION FROM https://stackoverflow.com/questions/22746429/c-decimal-to-binary-converting ***/
-/*template <class T>
-std::string getBinary(T n)
-{
-    std::string r;
-    while(n!=0) {r=(n%2==0 ?"0":"1")+r; n/=2;}
-    return r;
-}*/
 
 int getNumeric(std::string binary)
 {
@@ -70,8 +60,7 @@ void printBitManipulation(T num1, T num2)
 }
 
 // Creating a bit mask for a specific offset and length.
-template <class T>
-T bitMask(int offset, int length)
+unsigned long long bitMask(unsigned int offset, unsigned int length)
 {
 	//All ones.
 	unsigned long long mask = ~(0);
@@ -80,68 +69,65 @@ T bitMask(int offset, int length)
 	return mask;
 }
 
-
-// Convert input to binary --> 00 001111 000011 11 00001111
-// 				Want bits OFFSET = 2 LENGTH = 11
-//        OFFSET (2) % 8 = 2 (go back 2 bits) ... LENGTH (11) % 8 = 3 + 2
 template <class T>
 void bytesInQuestion(const T* src, T* dest, unsigned int offset, unsigned int length)
 {
-	unsigned long long mask = ~(0);
-	mask = ~((mask) << length) << offset;
-	//std::cout << "TEST1: " << getBinary(fragment) << std::endl;
-	//std::cout << "TEST2: " << getBinary(mask) << std::endl;
-	//T bytesInQ = src &  mask;
+  /*** Useful information for accessing info to pull out the fragment ***/
+  const unsigned wordSizeBits = sizeof(T)*8;
+  //std::cout << "WORD SIZE " << wordSizeBits << std::endl;
+  unsigned int startChunk = offset / wordSizeBits;
+  unsigned int startBitPos = offset % wordSizeBits;
+  unsigned int endBitPos = (offset + length) % wordSizeBits;
+  unsigned int endChunk = (offset + length) / wordSizeBits;
+  //std::cout << "END CHUNK " << endChunk << std::endl;
 
-	//First part of the fragment (1st byte)
-	int whichByte = int(offset / 8);
-	// startPos information valuable for cleaning the first byte in the buffer.
-	int startPos = offset % 8;
-	/*** SOURCED FROM geeksforgeeks.org ***/
-	const T sourceValue = *src;
-	std::cout << "BINARY for SRC: " << getBinary(sourceValue) << std::endl;
-	// QUESTION 1: is this okay to do? -- need to check if length is less than number of bits in T.
-	// Need to modulo and divide by the number of bits in T.
-	// Reevaluate how I did this.
-	T firstFrag = (((1 << length) - 1) & (sourceValue >> (offset - 1)));
-	std::string t1 = getBinary(firstFrag);
-	std::cout << "testing " << "int val:" << firstFrag << " " << t1 << std::endl;
-	// adding the first byte of the input given offset and length...
-	// QUESTION 2: Should I create a dynamic array where I append each bit in order to save the entire fragment desired?
-	// How do I "append" values to the destination?
-	std::string entireFragment = "";
-	std::string tempChunk = getBinary(firstFrag);
-	//adding the current chunk to the fragment to then be held by dest.
-	entireFragment += tempChunk;
-  std::cout << "entire fragment binary " << entireFragment << std::endl;
-  //std::cout << "entire fragment integer " << currentFrag << std::endl;
-  int counter = 8 - startPos;
-  // How do you find out where the last bit is.
-  //  go until the length + offset - how many bits are in the last chunk.
-  int endByte = int((offset + length) / 8);
-  int endPos = (length) % 8;
-  //Goes until hitting the last bit.
-  int goUntil = length - endPos;
-  T middleFrag = (((1 << goUntil) - 1) & (sourceValue >> (offset + counter - 1)));
-  tempChunk = getBinary(middleFrag);
-  entireFragment += tempChunk;
-  
+  /***
 
+  Okay... these are the bits presented (0101 0111 1000 1111 0000 0000 0000 0000)
+  Wanna get base case of BytesInQestion(, , 0, 6)... EXPECTED output = (0101 01) IN dest
 
-	*dest = firstFrag;
+  ***/
+  const unsigned int baseEx = 0xF1EA;
+  std::string baseBin = getBinary(baseEx);
+//  std::cout << "src INTEGER: " << baseEx << "\nsrc BINARY: " << baseBin << std::endl;
 
+  // Mask needs to be sizeof(T) ~0 but bit shift the current chunk. clear left clear right
 
+  /*** FIRST CHUNK ***/
+  unsigned long long firstChunkMask = ~(0);
+  firstChunkMask = ~((firstChunkMask) << wordSizeBits);
+  //std::cout << "FIRST MASK " << getBinary(firstChunkMask) << std::endl;
+  T temp = (*src >> startBitPos) & firstChunkMask ;
+  std::string base = getBinary(temp);
+  //std::cout << "src1 INTEGER: " << temp << "\nsrc BINARY: " << base << std::endl;
+  *dest += temp;
 
+  if (startChunk != endChunk)
+  {
+    // Grabbing the first chunk from source. -- All this does is remove 'n' LSB's (n can be 0)
+    int currentChunk = startChunk;
+    while(currentChunk < endChunk) // Not sure if <= or < yet
+    {
+      // Need to fill up "new" first chunk and continue to fill in subsequent chunks until the end.
+      if (startBitPos != 0)
+      {
+         // Then grab "startBitPos" bits from the next chunk.
+      }
+      currentChunk++;
+    }
+  }
+  else
+  {
+    // Start and end are in the same chunk.
+    unsigned int endChunkMask = ~(0);
+    std::cout << "END BIT: " << endBitPos << " OFFSET: " << offset <<  std::endl;
+    endChunkMask = (endChunkMask) >> (wordSizeBits - length); // (wordsizeBits - endBitPos)
+    //std::cout << "END CHUNK MASK " << getBinary(endChunkMask) << std::endl;
+    temp &= endChunkMask;
+    //std::cout << "binary temp " << getBinary(temp) << std::endl;
+    *dest = temp; // How does "adding" to destination work.
+  }
 }
-
-// Function that isolates the fragment wanted.
-template <class T>
-T cleanFragment(T stream, int offset, int length)
-{
-
-	return stream;
-}
-
 
 // running tally of the bit position.
 // as printing out each bit, print out shift value in decimal.
@@ -151,35 +137,6 @@ T cleanFragment(T stream, int offset, int length)
 		// little endian architecture.
 int main()
 {
-	const unsigned int a = 7;
-	const unsigned int b = ~(0);
-	printBinary(a, b);
-
-	const unsigned int mask1 = 0xF800;
-	const unsigned int mask2 = 0x07E0;
-	const unsigned int mask3 = 0x001F;
-	unsigned int test = 0x7BEF;
-	unsigned int out1 = (test & mask1) >> 11;
-	unsigned int out2 = (test & mask2) >> 5;
-	unsigned int out3 = (test & mask3);
-	std::cout << "out1 = " << out1 << std::endl;
-	std::cout << "out2 = " << out2 << std::endl;
-	std::cout << "out3 = " << out3 << std::endl << std::endl;
-	//std::cout << "Binary of hex: " << getBinary(0xFF) << std::endl;
-
-	//Example for bit shifting.
-	printBinary(test, mask1);
-	printBitManipulation(test, mask1);
-	printBinary(test, mask2);
-	printBitManipulation(test, mask2);
-	printBinary(test, mask3);
-	printBitManipulation(test, mask3);
-
-	// Creating a bitmask of 4 bits long.
-	//unsigned long long allOnes = ~(0);
-	//allOnes = ~((allOnes) >> 4) >> 10 ;
-	//std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;
-
 	//unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
 	//std::cout << "raw number bytes in question: " << un << std::endl;
 	//std::string uncleanFragment = getBinary(un);
@@ -187,15 +144,18 @@ int main()
 	// Basic output.
   //printBinary(12, 10);
   //printBitManipulation(12, 10);
-	int dest;
+	int dest = 0;
 	int* destination = &dest;
-	const int source = 171;
-
-	const int* src = &source;
-	bytesInQuestion(src, destination, 2, 5);
-	std::cout << "DESTINATION VALUE" << *destination << std::endl;
-
-
-
+	const int source1 = 0xF1EA;
+	const int* src = &source1;
+  std::cout << "SOURCE 1 VALUE: " << getBinary(*src) << std::endl;
+  // BASE test where no offset and in the same chunk.
+	bytesInQuestion(src, destination, 0, 45);
+  std::cout << "DESTINATION VALUE 1: " << getBinary(*destination) << std::endl;
+  std::cout << "DESTINATION VALUE 1: " << *destination << std::endl;
+  // Test where offset and in the same chunk.
+  bytesInQuestion(src, destination, 2, 6);
+  std::cout << "DESTINATION VALUE 2: " << getBinary(*destination) << std::endl;
+	std::cout << "DESTINATION VALUE 2: " << *destination << std::endl;
 	return 0;
 }
