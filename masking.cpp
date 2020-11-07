@@ -69,72 +69,41 @@ unsigned long long bitMask(unsigned int offset, unsigned int length)
 	return mask;
 }
 
+// start at dest[0]
 template <class T>
-void bytesInQuestion(const T* src, T* dest, unsigned int offset, unsigned int length)
+void bytesInQuestion(T* dest, const T* src, unsigned offset, unsigned length)
 {
   /*** Useful information for accessing info to pull out the fragment ***/
   const unsigned wordSizeBits = sizeof(T)*8;
   //std::cout << "WORD SIZE " << wordSizeBits << std::endl;
-  unsigned int startChunk = offset / wordSizeBits;
-  unsigned int startBitPos = offset % wordSizeBits;
-  unsigned int endBitPos = (offset + length) % wordSizeBits;
-  unsigned int endChunk = (offset + length) / wordSizeBits;
+  unsigned startChunk = offset / wordSizeBits;
+  unsigned startBitPos = offset % wordSizeBits;
+  unsigned endBitPos = (offset + length) % wordSizeBits;
+  unsigned endChunk = (offset + length) / wordSizeBits;
   //std::cout << "END CHUNK " << endChunk << std::endl;
-
-  /***
-
-  Okay... these are the bits presented (0101 0111 1000 1111 0000 0000 0000 0000)
-  Wanna get base case of BytesInQestion(, , 0, 6)... EXPECTED output = (0101 01) IN dest
-
-  ***/
-  const unsigned int baseEx = 0xF1EA;
-  std::string baseBin = getBinary(baseEx);
-//  std::cout << "src INTEGER: " << baseEx << "\nsrc BINARY: " << baseBin << std::endl;
 
   // Mask needs to be sizeof(T) ~0 but bit shift the current chunk. clear left clear right
 
-  /*** FIRST CHUNK ***/
-  unsigned long long firstChunkMask = ~(0);
-  firstChunkMask = ~((firstChunkMask) << wordSizeBits);
-  //std::cout << "FIRST MASK " << getBinary(firstChunkMask) << std::endl;
-  T temp = (*src >> startBitPos) & firstChunkMask ;
-  std::string base = getBinary(temp);
-  //std::cout << "src1 INTEGER: " << temp << "\nsrc BINARY: " << base << std::endl;
-  *dest += temp;
+  for ( unsigned i = 0; i <= (endChunk - startChunk); ++i )
+  {
+    dest[i] = src[startChunk + i];
+  }
+  T firstChunkMask = (~T(0)) << startBitPos;
+  dest[0] &= firstChunkMask;
+  T lastChunkMask = (~T(0)) >> (wordSizeBits - endBitPos);
+  dest[endChunk - startChunk] &= lastChunkMask;
+  if (startChunk == endChunk) {
+    dest[0] >>= startBitPos;
+  } else {
 
-  if (startChunk != endChunk)
-  {
-    // Grabbing the first chunk from source. -- All this does is remove 'n' LSB's (n can be 0)
-    int currentChunk = startChunk;
-    while(currentChunk < endChunk) // Not sure if <= or < yet
-    {
-      // Need to fill up "new" first chunk and continue to fill in subsequent chunks until the end.
-      if (startBitPos != 0)
-      {
-         // Then grab "startBitPos" bits from the next chunk.
-      }
-      currentChunk++;
-    }
   }
-  else
-  {
-    // Start and end are in the same chunk.
-    unsigned int endChunkMask = ~(0);
-    std::cout << "END BIT: " << endBitPos << " OFFSET: " << offset <<  std::endl;
-    endChunkMask = (endChunkMask) >> (wordSizeBits - length); // (wordsizeBits - endBitPos)
-    //std::cout << "END CHUNK MASK " << getBinary(endChunkMask) << std::endl;
-    temp &= endChunkMask;
-    //std::cout << "binary temp " << getBinary(temp) << std::endl;
-    *dest = temp; // How does "adding" to destination work.
-  }
+  /*
+   in separate routine
+   test with multiple unsigned char .. 16 bytes. Binary sequence. Call routine... print out what destination is after routine.
+
+  */
 }
 
-// running tally of the bit position.
-// as printing out each bit, print out shift value in decimal.
-// if % 7 and number of bits is 30. ABORT for now.
-// write the routine to print out chunks that are more than one variable long.
-		// 8 bytes MAX 32 bit architecture.. PRINT OUT BIT POSITIONS.
-		// little endian architecture.
 int main()
 {
 	//unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
@@ -150,7 +119,7 @@ int main()
 	const int* src = &source1;
   std::cout << "SOURCE 1 VALUE: " << getBinary(*src) << std::endl;
   // BASE test where no offset and in the same chunk.
-	bytesInQuestion(src, destination, 0, 45);
+	bytesInQuestion(src, destination, 0, 6);
   std::cout << "DESTINATION VALUE 1: " << getBinary(*destination) << std::endl;
   std::cout << "DESTINATION VALUE 1: " << *destination << std::endl;
   // Test where offset and in the same chunk.
