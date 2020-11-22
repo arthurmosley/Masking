@@ -94,13 +94,22 @@ void bytesInQuestion(T* dest, const T* src, unsigned offset, unsigned length)
     dest[i] = src[startChunk + i]; // copying chunks over.
 		//std::cout << src[startChunk + i] << " " << getBinary(src[startChunk + i]) << std::endl;
   }
+<<<<<<< HEAD
   T firstChunkMask = (~T(0)) << startBitPos; // create beginning mask.
   dest[0] &= firstChunkMask;
   T lastChunkMask = unsigned(~T(0)) >> (wordSizeBits - endBitPos); // create end mask, type issue must be casted.
+=======
+	// getting a mask for whatever starting bits aren't necessary. Followed by executing the mask.
+  T firstChunkMask = (~T(0)) << startBitPos;
+  dest[0] &= firstChunkMask;
+	// getting a mask for whatever ending bits aren't necessary. Followed by executing the mask.
+  T lastChunkMask = (~T(0)) >> (wordSizeBits - endBitPos);
+>>>>>>> 87b5c5b50b16124f9cedb988db714c9c8cb4e43d
   dest[endChunk - startChunk] &= lastChunkMask;
   if (startChunk == endChunk) {
     dest[0] >>= startBitPos; // flushes out unwanted bits.
   } else {
+<<<<<<< HEAD
 		// Handle when endChunk = startChunk + 1 && endChunk > startChunk + 1
 		/* endChunk = startChunk + 1 */
 		// Must move bits from end chunk to startchunk, then remove them from end chunk.
@@ -111,11 +120,13 @@ void bytesInQuestion(T* dest, const T* src, unsigned offset, unsigned length)
 		firstNBits = reverseBits(firstNBits);
 		dest[0] = (dest[0]) | firstNBits;
 		dest[1] >>= startBitPos;
+=======
+	
+>>>>>>> 87b5c5b50b16124f9cedb988db714c9c8cb4e43d
   }
   /*
    in separate routine
    test with multiple unsigned char .. 16 bytes. Binary sequence. Call routine... print out what destination is after routine.
-
   */
 }
 
