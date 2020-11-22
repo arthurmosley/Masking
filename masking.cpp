@@ -88,19 +88,20 @@ void bytesInQuestion(T* dest, const T* src, unsigned offset, unsigned length)
   {
     dest[i] = src[startChunk + i];
   }
+	// getting a mask for whatever starting bits aren't necessary. Followed by executing the mask.
   T firstChunkMask = (~T(0)) << startBitPos;
   dest[0] &= firstChunkMask;
+	// getting a mask for whatever ending bits aren't necessary. Followed by executing the mask.
   T lastChunkMask = (~T(0)) >> (wordSizeBits - endBitPos);
   dest[endChunk - startChunk] &= lastChunkMask;
   if (startChunk == endChunk) {
     dest[0] >>= startBitPos;
   } else {
-
+	
   }
   /*
    in separate routine
    test with multiple unsigned char .. 16 bytes. Binary sequence. Call routine... print out what destination is after routine.
-
   */
 }
 
