@@ -72,3 +72,9 @@ Grab LS starting bit position from startchunk + 1
 unsigned long long allOnes = ~(0);
 allOnes = ~((allOnes) >> 4) >> 10 ;
 std::cout << "BITMASK 4 bits long: " << getBinary(allOnes) << std::endl;
+
+std::cout << "StartChunk " << startChunk << std::endl;
+std::cout << "endChunk " << endChunk << std::endl;
+std::cout << "startBitPos " << startBitPos << std::endl;
+std::cout << "endBitPos " << endBitPos << std::endl;
+std::cout << "wordSizeBits " << wordSizeBits << std::endl;

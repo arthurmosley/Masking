@@ -59,14 +59,20 @@ void printBitManipulation(T num1, T num2)
 	std::cout << "---------------------------------------" << std::endl;
 }
 
-// Creating a bit mask for a specific offset and length.
-unsigned long long bitMask(unsigned int offset, unsigned int length)
+template <class T>
+T reverseBits(T num)
 {
-	//All ones.
-	unsigned long long mask = ~(0);
-	//
-	mask = ~((mask) >> length) >> offset;
-	return mask;
+	unsigned int numBits = sizeof(num) * 8;
+	unsigned int reverse = 0, temp;
+	for (unsigned i = 0; i < numBits; ++i)
+	{
+		temp = (num & (1 << i));
+		if(temp)
+		{
+			reverse |= (1 << ((numBits - 1) - i));
+		}
+	}
+	return reverse;
 }
 
 // start at dest[0]
@@ -75,27 +81,36 @@ void bytesInQuestion(T* dest, const T* src, unsigned offset, unsigned length)
 {
   /*** Useful information for accessing info to pull out the fragment ***/
   const unsigned wordSizeBits = sizeof(T)*8;
-  //std::cout << "WORD SIZE " << wordSizeBits << std::endl;
   unsigned startChunk = offset / wordSizeBits;
   unsigned startBitPos = offset % wordSizeBits;
   unsigned endBitPos = (offset + length) % wordSizeBits;
   unsigned endChunk = (offset + length) / wordSizeBits;
-  //std::cout << "END CHUNK " << endChunk << std::endl;
+
 
   // Mask needs to be sizeof(T) ~0 but bit shift the current chunk. clear left clear right
 
   for ( unsigned i = 0; i <= (endChunk - startChunk); ++i )
   {
-    dest[i] = src[startChunk + i];
+    dest[i] = src[startChunk + i]; // copying chunks over.
+		//std::cout << src[startChunk + i] << " " << getBinary(src[startChunk + i]) << std::endl;
   }
-  T firstChunkMask = (~T(0)) << startBitPos;
+  T firstChunkMask = (~T(0)) << startBitPos; // create beginning mask.
   dest[0] &= firstChunkMask;
-  T lastChunkMask = (~T(0)) >> (wordSizeBits - endBitPos);
+  T lastChunkMask = unsigned(~T(0)) >> (wordSizeBits - endBitPos); // create end mask, type issue must be casted.
   dest[endChunk - startChunk] &= lastChunkMask;
   if (startChunk == endChunk) {
-    dest[0] >>= startBitPos;
+    dest[0] >>= startBitPos; // flushes out unwanted bits.
   } else {
-
+		// Handle when endChunk = startChunk + 1 && endChunk > startChunk + 1
+		/* endChunk = startChunk + 1 */
+		// Must move bits from end chunk to startchunk, then remove them from end chunk.
+		dest[0] >>= startBitPos;
+		T tempMask = ~(T(0)) << startBitPos;
+		tempMask = ~tempMask;
+		T firstNBits = dest[1] & tempMask;
+		firstNBits = reverseBits(firstNBits);
+		dest[0] = (dest[0]) | firstNBits;
+		dest[1] >>= startBitPos;
   }
   /*
    in separate routine
@@ -106,25 +121,37 @@ void bytesInQuestion(T* dest, const T* src, unsigned offset, unsigned length)
 
 int main()
 {
-	//unsigned long long un = bytesInQuestion(0xFAFA, 2, 4);
-	//std::cout << "raw number bytes in question: " << un << std::endl;
-	//std::string uncleanFragment = getBinary(un);
-	//std::cout << "uncleaned bytes in question: " << uncleanFragment << std::endl;
-	// Basic output.
-  //printBinary(12, 10);
-  //printBitManipulation(12, 10);
-	int dest = 0;
-	int* destination = &dest;
-	const int source1 = 0xF1EA;
-	const int* src = &source1;
-  std::cout << "SOURCE 1 VALUE: " << getBinary(*src) << std::endl;
+	int destination[4] = { 0 };
+	int* dest = destination;
+	//const int source1[4] = {0xFEA1, 0xABCD, 0x8402, 0x570F};
+	int x = 0xABCD;
+	const int source1[4] = {0x7FFFFFFF, 0x7ABCD747, 0xFFFF, 0xFFFF};
+	const int* src = source1;
+
   // BASE test where no offset and in the same chunk.
-	bytesInQuestion(src, destination, 0, 6);
-  std::cout << "DESTINATION VALUE 1: " << getBinary(*destination) << std::endl;
-  std::cout << "DESTINATION VALUE 1: " << *destination << std::endl;
+	bytesInQuestion(dest, src, 3, 42);
+
+	//std::cout << "SOURCE 1 VALUES: ";
+	for( int i = 0; i < 4; ++i )
+	{
+  	std::cout << getBinary(src[i]) << " ";
+	}
+	std::cout << '\n';
+	//std::cout << "DESTINATION VALUES: ";
+	for ( int i = 0; i < 4; ++i )
+	{
+		std::cout << getBinary(dest[i]) << " ";
+	}
+	std::cout << '\n';
+	/*
   // Test where offset and in the same chunk.
-  bytesInQuestion(src, destination, 2, 6);
-  std::cout << "DESTINATION VALUE 2: " << getBinary(*destination) << std::endl;
-	std::cout << "DESTINATION VALUE 2: " << *destination << std::endl;
+  bytesInQuestion(dest, src, 2, 6);
+  std::cout << "DESTINATION VALUE 2: " << getBinary(*dest) << std::endl;
+	std::cout << "DESTINATION VALUE 2: " << *dest << std::endl;*/
+
+
+
+	//std::cout << getBinary(0xFEA1) << std::endl;
+	//std::cout << getBinary(0xABCD) << std::endl;
 	return 0;
 }
